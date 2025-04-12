@@ -5,11 +5,23 @@
 #include "newton_type.hpp"
 #include "constrained.hpp"
 #include "first_order.hpp"
-
+#include "report.hpp"
 namespace py = pybind11;
 
 PYBIND11_MODULE(_pyensmallen, m)
 {
+     py::class_<ens::PyReport>(m, "Report")
+    .def(py::init<
+             py::dict, 
+             bool,
+             double, 
+             size_t>(),
+         py::arg("resultIn"),
+         py::arg("enableoutput") = false,
+         py::arg("iterationsPercentageIn") = 0.1,
+         py::arg("outputMatrixSizeIn") = 4
+    );
+
   // L-BFGS (Newton-type) optimizer
   py::class_<PyL_BFGS>(m, "L_BFGS")
       .def(py::init<>())
