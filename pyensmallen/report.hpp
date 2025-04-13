@@ -2,6 +2,10 @@
 
 #include <ensmallen_bits/function.hpp>
 #include <iomanip>
+
+#include <ostream>
+#include <streambuf>
+
 namespace ens {
 
 /*
@@ -11,14 +15,15 @@ namespace ens {
 class PyReport
 {
  public:
+  py::dict result;
 
- py::dict result;
+  bool disableOutput;
 
   //! The number of iterations to print in percent.
   double iterationsPercentage;
 
   //! The output stream that all data is to be sent to; example: std::cout.
-  std::ostream& output = arma::get_cout_stream();
+  std::ostream& output;
 
   //! The number of values to print for the function coordinates.
   size_t outputMatrixSize;
@@ -52,8 +57,6 @@ class PyReport
   //! The number of Gradient() calls.
   size_t gradientCalls;
 
-  bool enableoutput;
-
   //! The number of Evaluate() calls.
   size_t evaluateCalls;
 
@@ -71,8 +74,14 @@ class PyReport
    * @param outputMatrixSizeIn The number of values to output for the function
    *     coordinates.
    */
+
+   static std::ostream& GetOutputStream(bool disable) {
+    static NullStream nullStream;
+    return disable ? nullStream : arma::get_cout_stream();
+}
+
   PyReport( py::dict resultIn,
-          bool enableoutput = false,
+          bool disableOutput = false,
           const double iterationsPercentageIn = 0.1,
          const size_t outputMatrixSizeIn = 4) :
       iterationsPercentage(iterationsPercentageIn),
@@ -85,9 +94,10 @@ class PyReport
       gradientCalls(0),
       evaluateCalls(0),
       epochCalls(0),
-      enableoutput(enableoutput)
+      disableOutput(disableOutput),
+      output(GetOutputStream(disableOutput))
   { /* Nothing to do here. */ }
-
+  
   /**
    * Callback function called at the begin of the optimization process.
    *
@@ -118,82 +128,81 @@ class PyReport
                        MatType& coordinates)
   {
 
-    if (enableoutput)
-    {
+    
     output << "Modified Optimization Report" << std::endl;
     output << std::string(80, '-') << std::endl << std::endl;
-    }
+    
     std::streamsize streamPrecision = output.precision(4);
 
-    // if (coordinates.n_rows > outputMatrixSize ||
-    //     coordinates.n_cols > outputMatrixSize)
-    // {
-      // output << "Initial coordinates: " << std::endl;
-      // TruncatePrint(initialCoordinates, outputMatrixSize);
-      // output << std::endl << "Final coordinates: " << std::endl;
-      // TruncatePrint(coordinates, outputMatrixSize);
-      // output << std::endl;
-    // }
-    // else
-    // {
-      // output << "Initial Coordinates:" << std::endl << initialCoordinates.t();
-      // output << std::endl << "Final coordinates:" << std::endl
-          // << coordinates.t() << std::endl;
-    // }
+    if (coordinates.n_rows > outputMatrixSize ||
+        coordinates.n_cols > outputMatrixSize)
+    {
+      output << "Initial coordinates: " << std::endl;
+      TruncatePrint(initialCoordinates, outputMatrixSize);
+      output << std::endl << "Final coordinates: " << std::endl;
+      TruncatePrint(coordinates, outputMatrixSize);
+      output << std::endl;
+    }
+    else
+    {
+      output << "Initial Coordinates:" << std::endl << initialCoordinates.t();
+      output << std::endl << "Final coordinates:" << std::endl
+          << coordinates.t() << std::endl;
+    }
 
-    // PrettyPrintElement("iter");
-    // PrettyPrintElement("loss");
-    // PrettyPrintElement("loss change");
+    PrettyPrintElement("iter");
+    PrettyPrintElement("loss");
+    PrettyPrintElement("loss change");
 
-    // if (hasGradient)
-    //   PrettyPrintElement("|gradient|");
+    if (hasGradient)
+      PrettyPrintElement("|gradient|");
 
-    // if (!stepsizes.empty())
-    //   PrettyPrintElement("step size");
+    if (!stepsizes.empty())
+      PrettyPrintElement("step size");
 
-    // PrettyPrintElement("total time");
-    // output << std::endl;
+    PrettyPrintElement("total time");
+    output << std::endl;
 
     size_t iterationStep = objectives.size() / (iterationsPercentage * 100);
     if (iterationStep <= 0)
       iterationStep = 1;
 
-    // for (size_t i = 0; i < objectives.size(); i += iterationStep)
-    // {
-    //   PrettyPrintElement(i);
-    //   PrettyPrintElement(objectives[i]);
-    //   PrettyPrintElement(
-    //       i > 0 ? objectives[i - iterationStep] - objectives[i] : 0);
+    for (size_t i = 0; i < objectives.size(); i += iterationStep)
+    {
+      PrettyPrintElement(i);
+      PrettyPrintElement(objectives[i]);
+      PrettyPrintElement(
+          i > 0 ? objectives[i - iterationStep] - objectives[i] : 0);
 
-    //   if (hasGradient)
-    //     PrettyPrintElement(gradientsNorm[i]);
+      if (hasGradient)
+        PrettyPrintElement(gradientsNorm[i]);
 
-    //   if (!stepsizes.empty())
-    //     PrettyPrintElement(stepsizes[i]);
+      if (!stepsizes.empty())
+        PrettyPrintElement(stepsizes[i]);
 
-    //   PrettyPrintElement(timings[i]);
-    //   output << std::endl;
-    // }
+      PrettyPrintElement(timings[i]);
+      output << std::endl;
+    }
 
-    // output << std::endl << std::string(80, '-') << std::endl << std::endl;
-    // output << "Version:" << std::endl;
-    // PrettyPrintElement("ensmallen:", 30);
-    // output << ens::version::as_string() << std::endl;
-    // PrettyPrintElement("armadillo:", 30);
-    // output << arma::arma_version::as_string() << std::endl << std::endl;
+    output << std::endl << std::string(80, '-') << std::endl << std::endl;
+    output << "Version:" << std::endl;
+    PrettyPrintElement("ensmallen:", 30);
+    output << ens::version::as_string() << std::endl;
+    PrettyPrintElement("armadillo:", 30);
+    output << arma::arma_version::as_string() << std::endl << std::endl;
 
-    // output << "Function:" << std::endl;
-    // std::stringstream functionStream;
+    output << "Function:" << std::endl;
+    std::stringstream functionStream;
 
-    // PrintNumFunctions(function, functionStream);
-    // if (functionStream.rdbuf()->in_avail() > 0)
-    //   output << functionStream.str();
+    PrintNumFunctions(function, functionStream);
+    if (functionStream.rdbuf()->in_avail() > 0)
+      output << functionStream.str();
 
-    // PrettyPrintElement("Coordinates rows:", 30);
-    // output << coordinates.n_rows << std::endl;
-    // PrettyPrintElement("Coordinates columns:", 30);
-    // output << coordinates.n_cols << std::endl;
-    // output << std::endl;
+    PrettyPrintElement("Coordinates rows:", 30);
+    output << coordinates.n_rows << std::endl;
+    PrettyPrintElement("Coordinates columns:", 30);
+    output << coordinates.n_cols << std::endl;
+    output << std::endl;
 
     // If we did not take any steps, at least fill what the initial objective
     // was.
@@ -208,73 +217,75 @@ class PyReport
       // It's not entirely clear how to compute the objective (since the
       // function could implement many different ways of evaluating the
       // objective), so issue an error and return.
-      // output << "Objective never computed.  Did the optimization fail?"
-          // << std::endl;
+      output << "Objective never computed.  Did the optimization fail?"
+          << std::endl;
       result["success"] = false;
-      // PrettyPrintElement("Time (in seconds):", 30);
-      // output << optimizationTimer.toc() << std::endl;
+      PrettyPrintElement("Time (in seconds):", 30);
+      output << optimizationTimer.toc() << std::endl;
       return;
     }
 
-    // output << "Loss:" << std::endl;
-    // PrettyPrintElement("Initial", 30);
-    // output << objectives[0] << std::endl;
-    // PrettyPrintElement("Final", 30);
-    // output << objectives[objectives.size() - 1] << std::endl;
-    // PrettyPrintElement("Change", 30);
-    // output << objectives[0] - objectives[objectives.size() - 1] << std::endl;
+    output << "Loss:" << std::endl;
+    PrettyPrintElement("Initial", 30);
+    output << objectives[0] << std::endl;
+    PrettyPrintElement("Final", 30);
+    output << objectives[objectives.size() - 1] << std::endl;
+    PrettyPrintElement("Change", 30);
+    output << objectives[0] - objectives[objectives.size() - 1] << std::endl;
     result["objective_value"] = objectives[objectives.size() - 1];
 
-    // output << std::endl << "Optimizer:" << std::endl;
+    output << std::endl << "Optimizer:" << std::endl;
     std::stringstream optimizerStream;
 
-    // PrintMaxIterations(optimizer, optimizerStream);
-    // PrintBatchSize(optimizer, optimizerStream);
-    // if (functionStream.rdbuf()->in_avail() > 0)
-    //   output << optimizerStream.str();
+    PrintMaxIterations(optimizer, optimizerStream);
+    PrintBatchSize(optimizer, optimizerStream);
+    if (functionStream.rdbuf()->in_avail() > 0)
+      output << optimizerStream.str();
 
-    // PrettyPrintElement("Iterations:", 30);
-    if (tookStep)
-      // output << objectives.size() << std::endl;
+    PrettyPrintElement("Iterations:", 30);
+    if (tookStep){
+      output << objectives.size() << std::endl;
       result["iterations"] = objectives.size();
-    else
-      // output << "0 (No steps taken! Did the optimization fail?)" << std::endl;
+    }
+    else{
+      output << "0 (No steps taken! Did the optimization fail?)" << std::endl;
       result["success"] = false;
+    }
     if (epochCalls > 0)
     {
-      // PrettyPrintElement("Number of epochs:", 30);
-      // output << epochCalls << std::endl;
+      PrettyPrintElement("Number of epochs:", 30);
+      output << epochCalls << std::endl;
     }
 
     if (!stepsizes.empty())
     {
-      // PrettyPrintElement("Initial step size:", 30);
-      // output << stepsizes.front() << std::endl;
+      PrettyPrintElement("Initial step size:", 30);
+      output << stepsizes.front() << std::endl;
 
-      // PrettyPrintElement("Final step size:", 30);
-      // output << stepsizes.back() << std::endl;
+      PrettyPrintElement("Final step size:", 30);
+      output << stepsizes.back() << std::endl;
     }
 
     if (hasGradient && gradientsNorm.size() > 0)
     {
-      // PrettyPrintElement("Coordinates max. norm:", 30);
-      // output << *std::max_element(std::begin(gradientsNorm),
-          // std::end(gradientsNorm)) << std::endl;
+      PrettyPrintElement("Coordinates max. norm:", 30);
+      output << *std::max_element(std::begin(gradientsNorm),
+          std::end(gradientsNorm)) << std::endl;
     }
 
-    // PrettyPrintElement("Evaluate calls:", 30);
-    // output << evaluateCalls << std::endl;
+    PrettyPrintElement("Evaluate calls:", 30);
+    output << evaluateCalls << std::endl;
     result["evaluate_calls"] = evaluateCalls;
 
     if (hasGradient)
     {
-      // PrettyPrintElement("Gradient calls:", 30);
-      // output << gradientCalls << std::endl;
+      PrettyPrintElement("Gradient calls:", 30);
+      output << gradientCalls << std::endl;
       result["gradient_calls"] = gradientCalls;
     }
 
-    // PrettyPrintElement("Time (in seconds):", 30);
-    // output << timings[timings.size() - 1] << std::endl;
+    PrettyPrintElement("Time (in seconds):", 30);
+    output << timings[timings.size() - 1] << std::endl;
     result["total_time"] = timings[timings.size() - 1];
 
     // Restore precision.
@@ -480,12 +491,12 @@ class PyReport
       traits::HasMaxIterationsSignature<OptimizerType>::value, void>::type
   PrintMaxIterations(const OptimizerType& optimizer, std::stringstream& stream)
   {
-    // PrettyPrintElement(stream, "Maximum iterations:", 30);
-    // stream << optimizer.MaxIterations() << std::endl;
+    PrettyPrintElement(stream, "Maximum iterations:", 30);
+    stream << optimizer.MaxIterations() << std::endl;
 
-    // PrettyPrintElement(stream, "Reached maximum iterations:", 30);
-    // stream << std::string(optimizer.MaxIterations() == objectives.size() ?
-    //     "true" : "false") << std::endl;
+    PrettyPrintElement(stream, "Reached maximum iterations:", 30);
+    stream << std::string(optimizer.MaxIterations() == objectives.size() ?
+        "true" : "false") << std::endl;
   }
 
   template<typename OptimizerType>
@@ -505,8 +516,8 @@ class PyReport
       void>::type
   PrintBatchSize(const OptimizerType& optimizer, std::stringstream& stream)
   {
-    // PrettyPrintElement(stream, "Batch size:", 30);
-    // stream << optimizer.BatchSize() << std::endl;
+    PrettyPrintElement(stream, "Batch size:", 30);
+    stream << optimizer.BatchSize() << std::endl;
   }
 
   template<typename OptimizerType>
@@ -527,8 +538,8 @@ class PyReport
                           const T& data,
                           const size_t width = 14)
   {
-    // out << std::left << std::setw(width) << std::setfill(' ')
-    //     << std::setprecision(3) << data;
+    out << std::left << std::setw(width) << std::setfill(' ')
+        << std::setprecision(3) << data;
   }
 
   /**
@@ -564,41 +575,41 @@ class PyReport
   template<typename T>
   void TruncatePrint(const T& data, const size_t size)
   {
-    // // We can't directly output the result of submat or use .print, because
-    // // both introduce a new line at the end, so we iterate over the elements.
-    // for (size_t c = 0, n = 0; c < data.n_cols; ++c)
-    // {
-    //   // Skip to the last column.
-    //   if (c >= (size - 1))
-    //   {
-    //     output << "..." << std::endl;
-    //     n = (data.n_cols - 2) * data.n_rows - 1;
-    //   }
+    // We can't directly output the result of submat or use .print, because
+    // both introduce a new line at the end, so we iterate over the elements.
+    for (size_t c = 0, n = 0; c < data.n_cols; ++c)
+    {
+      // Skip to the last column.
+      if (c >= (size - 1))
+      {
+        output << "..." << std::endl;
+        n = (data.n_cols - 2) * data.n_rows - 1;
+      }
 
-    //   for (size_t r = 0; r < data.n_rows; ++r)
-    //   {
-    //     // Check if need to skip to the last row.
-    //     if (r < (size - 1))
-    //     {
-    //       output << std::fixed;
+      for (size_t r = 0; r < data.n_rows; ++r)
+      {
+        // Check if need to skip to the last row.
+        if (r < (size - 1))
+        {
+          output << std::fixed;
 
-    //       // Add space for positive value, to align with negative values.
-    //       if (data(n) >= 0)
-    //         output << " ";
+          // Add space for positive value, to align with negative values.
+          if (data(n) >= 0)
+            output << " ";
 
-    //       output << data(n++) << " ";
-    //     }
-    //     else
-    //     {
-    //       n = (c + 1) * data.n_rows - 1;
-    //       output << " ... " << data(n) << std::endl;
-    //       break;
-    //     }
-    //   }
+          output << data(n++) << " ";
+        }
+        else
+        {
+          n = (c + 1) * data.n_rows - 1;
+          output << " ... " << data(n) << std::endl;
+          break;
+        }
+      }
 
-    //   if (c >= (size - 1))
-    //     break;
-    // }
+      if (c >= (size - 1))
+        break;
+    }
   }
 
   /**
@@ -623,3 +634,16 @@ class PyReport
 
 } // namespace ens
 
+class NullBuffer : public std::streambuf
+{
+public:
+  int overflow(int c) override { return c; }
+};
+
+class NullStream : public std::ostream
+{
+public:
+  NullStream() : std::ostream(&nullBuffer) {}
+private:
+  NullBuffer nullBuffer;
+};

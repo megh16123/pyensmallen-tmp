@@ -10,17 +10,6 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(_pyensmallen, m)
 {
-     py::class_<ens::PyReport>(m, "Report")
-    .def(py::init<
-             py::dict, 
-             bool,
-             double, 
-             size_t>(),
-         py::arg("resultIn"),
-         py::arg("enableoutput") = false,
-         py::arg("iterationsPercentageIn") = 0.1,
-         py::arg("outputMatrixSizeIn") = 4
-    );
 
   // L-BFGS (Newton-type) optimizer
   py::class_<PyL_BFGS>(m, "L_BFGS")
@@ -52,7 +41,11 @@ PYBIND11_MODULE(_pyensmallen, m)
                     &PyL_BFGS::setMaxLineSearchTrials)
       .def_property("minStep", &PyL_BFGS::getMinStep, &PyL_BFGS::setMinStep)
       .def_property("maxStep", &PyL_BFGS::getMaxStep, &PyL_BFGS::setMaxStep)
-      .def("optimize", &PyL_BFGS::Optimize);
+      .def("optimize", &PyL_BFGS::Optimize,
+          py::arg("f"),
+          py::arg("initial_point"),
+          py::arg("report") = nullptr);
+    
   
   // FrankWolfe - constrained optimization
   py::class_<PyFrankWolfe>(m, "FrankWolfe")
@@ -257,4 +250,16 @@ PYBIND11_MODULE(_pyensmallen, m)
                     &PyAdamType<ens::NadamUpdate>::getResetPolicy,
                     &PyAdamType<ens::NadamUpdate>::setResetPolicy)
       .def("optimize", &PyAdamType<ens::NadamUpdate>::Optimize);
+
+      py::class_<ens::PyReport>(m, "Report")
+    .def(py::init<
+             py::dict, 
+             bool,
+             double, 
+             size_t>(),
+         py::arg("resultIn"),
+         py::arg("disableOutput") = false,
+         py::arg("iterationsPercentageIn") = 0.1,
+         py::arg("outputMatrixSizeIn") = 4
+    );
 }
