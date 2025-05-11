@@ -28,21 +28,52 @@ jobs:
         uses: mamba-org/setup-micromamba@v2.0.1
         with:
           environment-name: pyensmallen
-          create-args: armadillo ensmallen libopenblas
+          create-args: armadillo ensmallen nomkl
           init-shell: bash
           generate-run-shell: true
-
       # Install MKL on Linux only
       - name: Install MKL (Linux)
         if: matrix.buildplat[0] == 'ubuntu-latest'
         run: |
+          # Update the package list
           sudo apt-get update
+          
+          # Install Intel MKL
           sudo apt-get install -y intel-mkl
-          find /usr -name "libmkl_rt.so*" 2>/dev/null || echo "MKL not found in /usr"
-          find $MAMBA_ROOT_PREFIX -name "libmkl_rt.so*" 2>/dev/null || echo "MKL not found in conda"
-          ldconfig -p | grep mkl || echo "MKL not in ldconfig"
-          sudo ln -s  /lib/x86_64-linux-gnu/libmkl_rt.so  /lib/x86_64-linux-gnu/libmkl_rt.so.2
+          
+          # Search for MKL libraries in common system directories
+          echo "Searching for MKL in system directories..."
+          MKL_PATH=$(find /usr -name "libmkl_rt.so*" 2>/dev/null)
+          if [ -z "$MKL_PATH" ]; then
+            echo "MKL not found in /usr"
+          else
+            echo "MKL found at: $MKL_PATH"
+          fi
 
+          # Search for MKL in conda environments
+          MKL_CONDA_PATH=$(find $MAMBA_ROOT_PREFIX -name "libmkl_rt.so*" 2>/dev/null)
+          if [ -z "$MKL_CONDA_PATH" ]; then
+            echo "MKL not found in conda"
+          else
+            echo "MKL found in conda at: $MKL_CONDA_PATH"
+          fi
+
+          # Check if MKL is listed in ldconfig
+          MKL_LDCONFIG=$(ldconfig -p | grep mkl)
+          if [ -z "$MKL_LDCONFIG" ]; then
+            echo "MKL not found in ldconfig"
+          else
+            echo "MKL found in ldconfig: $MKL_LDCONFIG"
+          fi
+
+          # Ensure the symbolic link is created if MKL is found
+          if [ -n "$MKL_PATH" ]; then
+            echo "Creating symbolic link for MKL..."
+            sudo ln -sf $MKL_PATH /lib/x86_64-linux-gnu/libmkl_rt.so.2
+            echo "Symbolic link created: /lib/x86_64-linux-gnu/libmkl_rt.so.2"
+          else
+            echo "MKL library not found, skipping symbolic link creation"
+          fi
 
 
 
