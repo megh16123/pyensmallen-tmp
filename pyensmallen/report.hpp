@@ -6,6 +6,21 @@
 #include <ostream>
 #include <streambuf>
 
+
+class NullBuffer : public std::streambuf
+{
+public:
+  int overflow(int c) override { return c; }
+};
+
+class NullStream : public std::ostream
+{
+public:
+  NullStream() : std::ostream(&nullBuffer) {}
+private:
+  NullBuffer nullBuffer;
+};
+
 namespace ens {
 
 /*
@@ -634,16 +649,3 @@ class PyReport
 
 } // namespace ens
 
-class NullBuffer : public std::streambuf
-{
-public:
-  int overflow(int c) override { return c; }
-};
-
-class NullStream : public std::ostream
-{
-public:
-  NullStream() : std::ostream(&nullBuffer) {}
-private:
-  NullBuffer nullBuffer;
-};
