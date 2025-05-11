@@ -28,9 +28,17 @@ jobs:
         uses: mamba-org/setup-micromamba@v2.0.1
         with:
           environment-name: pyensmallen
-          create-args: armadillo ensmallen libopenblas
+          create-args: armadillo ensmallen 
           init-shell: bash
           generate-run-shell: true
+
+       # Install MKL on Linux only
+      - name: Install MKL (Linux)
+        if: matrix.buildplat[0] == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y intel-mkl
+
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.19.0
@@ -44,6 +52,8 @@ jobs:
           CIBW_ENVIRONMENT_LINUX: >-
             MAMBA_ROOT_PREFIX="/host/home/runner/micromamba"
             CMAKE_PREFIX_PATH="/host/home/runner/micromamba/envs/pyensmallen"
+            VERBOSE=1
+            LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
             VERBOSE=1
           CIBW_ENVIRONMENT_MACOS: >-
             PKG_CONFIG_PATH="/Users/runner/micromamba/envs/pyensmallen/lib/pkgconfig"
@@ -96,82 +106,3 @@ jobs:
         with:
           name: sdist
           path: ./wheelhouse/*.tar.gz
-
-  # publish-to-pypi:
-  #   name: Publish Python distribution to PyPI
-  #   needs: [build-wheel, build-sdist]
-  #   runs-on: ubuntu-latest
-  #   if: startsWith(github.ref, 'refs/tags/v')
-  #   environment:
-  #     name: pypi
-  #     url: https://pypi.org/p/pyensmallen
-  #   permissions:
-  #     id-token: write
-
-  #   steps:
-  #     # Download all artifacts to a consolidated directory
-  #     - name: Download all artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         path: dist/
-  #         merge-multiple: true
-
-  #     # Move everything from wheelhouse to dist if they exist in separate dirs
-  #     - name: Consolidate distribution files
-  #       run: |
-  #         mkdir -p dist
-  #         if [ -d "dist/wheelhouse" ]; then
-  #           mv dist/wheelhouse/* dist/
-  #           rm -rf dist/wheelhouse
-  #         fi
-  #         ls -la dist/
-
-  #     - name: Publish to PyPI
-  #       uses: pypa/gh-action-pypi-publish@release/v1
-  #       with:
-  #         packages-dir: dist/
-  #         verbose: true
-
-  upload_release:
-    needs: [build-wheel, build-sdist]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/experimental'
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          path: ./wheelhouse
-          merge-multiple: true # Downloads all artifacts
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install PyGithub
-
-      - name: Create Release and Upload Assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          python - <<EOF
-          import os
-          from github import Github
-
-          g = Github(os.environ['GITHUB_TOKEN'])
-          repo = g.get_repo(os.environ['GITHUB_REPOSITORY'])
-
-          tag_name = os.environ['GITHUB_REF'].split('/')[-1]
-          release = repo.create_git_release(tag_name, f"Release {tag_name}", f"Release {tag_name}")
-
-          for asset in os.listdir('./wheelhouse'):
-              release.upload_asset(f"./wheelhouse/{asset}")
-
-          print("Release created and assets uploaded successfully")
-          EOF
