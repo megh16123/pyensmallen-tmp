@@ -38,17 +38,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y intel-mkl
-     
-      - name: Debug MKL library location
-        run: |
           find /usr -name "libmkl_rt.so*" 2>/dev/null || echo "MKL not found in /usr"
           find $MAMBA_ROOT_PREFIX -name "libmkl_rt.so*" 2>/dev/null || echo "MKL not found in conda"
           ldconfig -p | grep mkl || echo "MKL not in ldconfig"
           ln -s  /lib/x86_64-linux-gnu/libmkl_rt.so  /lib/x86_64-linux-gnu/libmkl_rt.so.2
 
-      - name: Rename
-        run: |
-          ln -s  /lib/x86_64-linux-gnu/libmkl_rt.so  /lib/x86_64-linux-gnu/libmkl_rt.so.2
 
 
 
