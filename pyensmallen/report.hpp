@@ -7,6 +7,10 @@
 #include <streambuf>
 
 
+
+
+namespace ens {
+
 class NullBuffer : public std::streambuf
 {
 public:
@@ -20,8 +24,6 @@ public:
 private:
   NullBuffer nullBuffer;
 };
-
-namespace ens {
 
 /*
  A modified Report class
@@ -90,8 +92,8 @@ class PyReport
    *     coordinates.
    */
 
-   static std::ostream& GetOutputStream(bool disable) {
-    static NullStream nullStream;
+    std::ostream& GetOutputStream(bool disable) {
+     NullStream nullStream;
     return disable ? nullStream : arma::get_cout_stream();
 }
 
