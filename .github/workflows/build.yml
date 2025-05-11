@@ -28,17 +28,9 @@ jobs:
         uses: mamba-org/setup-micromamba@v2.0.1
         with:
           environment-name: pyensmallen
-          create-args: armadillo ensmallen 
+          create-args: armadillo ensmallen mkl-devel
           init-shell: bash
           generate-run-shell: true
-
-       # Install MKL on Linux only
-      - name: Install MKL (Linux)
-        if: matrix.buildplat[0] == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y intel-mkl
-
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.19.0
