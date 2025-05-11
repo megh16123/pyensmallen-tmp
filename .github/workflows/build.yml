@@ -28,10 +28,19 @@ jobs:
         uses: mamba-org/setup-micromamba@v2.0.1
         with:
           environment-name: pyensmallen
-          create-args: armadillo ensmallen mkl
+          create-args: armadillo ensmallen libopenblas
           init-shell: bash
           generate-run-shell: true
 
+            # Install MKL on Linux only
+      - name: Install MKL (Linux)
+        if: matrix.buildplat[0] == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y intel-mkl
+          # Alternatively, install via conda:
+          # micromamba install -y -n pyensmallen -c intel mkl
+          
       - name: Debug MKL library location
         run: |
           find /usr -name "libmkl_rt.so*" 2>/dev/null || echo "MKL not found in /usr"
