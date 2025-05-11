@@ -132,46 +132,46 @@ jobs:
   #         packages-dir: dist/
   #         verbose: true
 
-  # upload_release:
-  #   needs: [build-wheel, build-sdist]
-  #   runs-on: ubuntu-latest
-  #   if: startsWith(github.ref, 'refs/tags/v')
-  #   permissions:
-  #     contents: write
-  #   steps:
-  #     - uses: actions/checkout@v4
+  upload_release:
+    needs: [build-wheel, build-sdist]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         path: ./wheelhouse
-  #         merge-multiple: true # Downloads all artifacts
+      - uses: actions/download-artifact@v4
+        with:
+          path: ./wheelhouse
+          merge-multiple: true # Downloads all artifacts
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: "3.x"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
 
-  #     - name: Install dependencies
-  #       run: |
-  #         python -m pip install --upgrade pip
-  #         pip install PyGithub
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyGithub
 
-  #     - name: Create Release and Upload Assets
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       run: |
-  #         python - <<EOF
-  #         import os
-  #         from github import Github
+      - name: Create Release and Upload Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python - <<EOF
+          import os
+          from github import Github
 
-  #         g = Github(os.environ['GITHUB_TOKEN'])
-  #         repo = g.get_repo(os.environ['GITHUB_REPOSITORY'])
+          g = Github(os.environ['GITHUB_TOKEN'])
+          repo = g.get_repo(os.environ['GITHUB_REPOSITORY'])
 
-  #         tag_name = os.environ['GITHUB_REF'].split('/')[-1]
-  #         release = repo.create_git_release(tag_name, f"Release {tag_name}", f"Release {tag_name}")
+          tag_name = os.environ['GITHUB_REF'].split('/')[-1]
+          release = repo.create_git_release(tag_name, f"Release {tag_name}", f"Release {tag_name}")
 
-  #         for asset in os.listdir('./wheelhouse'):
-  #             release.upload_asset(f"./wheelhouse/{asset}")
+          for asset in os.listdir('./wheelhouse'):
+              release.upload_asset(f"./wheelhouse/{asset}")
 
-  #         print("Release created and assets uploaded successfully")
-  #         EOF
+          print("Release created and assets uploaded successfully")
+          EOF
