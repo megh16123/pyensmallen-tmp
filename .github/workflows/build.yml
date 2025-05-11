@@ -28,7 +28,7 @@ jobs:
         uses: mamba-org/setup-micromamba@v2.0.1
         with:
           environment-name: pyensmallen
-          create-args: armadillo ensmallen nomkl
+          create-args: armadillo ensmallen blas
           init-shell: bash
           generate-run-shell: true
 
