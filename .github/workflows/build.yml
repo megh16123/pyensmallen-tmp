@@ -44,7 +44,7 @@ jobs:
           find /usr -name "libmkl_rt.so*" 2>/dev/null || echo "MKL not found in /usr"
           find $MAMBA_ROOT_PREFIX -name "libmkl_rt.so*" 2>/dev/null || echo "MKL not found in conda"
           ldconfig -p | grep mkl || echo "MKL not in ldconfig"
-          # ln -s  /lib/x86_64-linux-gnu/libmkl_rt.so  /lib/x86_64-linux-gnu/libmkl_rt.so.2
+          ln -s  /lib/x86_64-linux-gnu/libmkl_rt.so  /lib/x86_64-linux-gnu/libmkl_rt.so.2
 
 
       - name: Build wheels
