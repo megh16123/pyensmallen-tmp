@@ -39,7 +39,7 @@ environment = { CMAKE_PREFIX_PATH = "/project/deps" }
 
 [project]
 name = 'pyensmallen_experimental'
-version = '0.2.63'
+version = '0.2.65'
 description = 'Python bindings for the Ensmallen library.'
 readme = 'README.md'
 requires-python = '>=3.10'
