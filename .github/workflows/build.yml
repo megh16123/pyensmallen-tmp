@@ -33,11 +33,11 @@ jobs:
           generate-run-shell: true
 
       - name: Install MKL
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y intel-mkl
-        find /usr -name "libmkl_rt.so.2" 2>/dev/null || echo "MKL not found in /usr"
-        find /opt -name "libmkl_rt.so.2" 2>/dev/null || echo "MKL not found in /opt"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y intel-mkl
+          find /usr -name "libmkl_rt.so.2" 2>/dev/null || echo "MKL not found in /usr"
+          find /opt -name "libmkl_rt.so.2" 2>/dev/null || echo "MKL not found in /opt"
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.19.0
