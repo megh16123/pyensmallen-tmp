@@ -2,9 +2,8 @@ name: Build and Release
 
 on:
   push:
-    branches: ["*"]
-    tags: ["v*"]
-
+    branches:
+      - experimental
 jobs:
   build-wheel:
     name: Build wheels on ${{ matrix.os }}
@@ -19,7 +18,7 @@ jobs:
           - ["cp311", "3.11"]
           - ["cp312", "3.12"]
     runs-on: ${{ matrix.buildplat[0] }}
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.ref == 'refs/heads/experimental'
 
     steps:
       - uses: actions/checkout@v4
@@ -29,7 +28,7 @@ jobs:
         uses: mamba-org/setup-micromamba@v2.0.1
         with:
           environment-name: pyensmallen
-          create-args: armadillo ensmallen numpy nomkl
+           create-args: armadillo ensmallen numpy nomkl
           init-shell: bash
           generate-run-shell: true
 
@@ -45,6 +44,8 @@ jobs:
           CIBW_ENVIRONMENT_LINUX: >-
             MAMBA_ROOT_PREFIX="/host/home/runner/micromamba"
             CMAKE_PREFIX_PATH="/host/home/runner/micromamba/envs/pyensmallen"
+            VERBOSE=1
+            LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
             VERBOSE=1
           CIBW_ENVIRONMENT_MACOS: >-
             PKG_CONFIG_PATH="/Users/runner/micromamba/envs/pyensmallen/lib/pkgconfig"
@@ -67,4 +68,3 @@ jobs:
         with:
           name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
           path: wheelhouse/*.whl
-
