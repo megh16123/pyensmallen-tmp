@@ -32,12 +32,10 @@ jobs:
           init-shell: bash
           generate-run-shell: true
 
-      - name: Install MKL
+      - name: Install openblas
         run: |
-          sudo apt-get update
-          sudo apt-get install -y intel-mkl
-          find /usr -name "libmkl_rt.so.2" 2>/dev/null || echo "MKL not found in /usr"
-          find /opt -name "libmkl_rt.so.2" 2>/dev/null || echo "MKL not found in /opt"
+          sudo apt-get install libopenblas-dev
+          sudo ln -s /usr/lib/x86_64-linux-gnu/libopenblas.so.0 /usr/lib/x86_64-linux-gnu/libmkl_rt.so.2
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.19.0
@@ -55,6 +53,8 @@ jobs:
             MAMBA_ROOT_PREFIX="/host/home/runner/micromamba"
             CMAKE_PREFIX_PATH="/host/home/runner/micromamba/envs/pyensmallen"
             VERBOSE=1
+            LD_LIBRARY_PATH: "/usr/lib/x86_64-linux-gnu:/opt/intel/mkl/lib/intel64:$LD_LIBRARY_PATH"
+
           CIBW_ENVIRONMENT_MACOS: >-
             PKG_CONFIG_PATH="/Users/runner/micromamba/envs/pyensmallen/lib/pkgconfig"
             CMAKE_PREFIX_PATH="/Users/runner/micromamba/envs/pyensmallen"
@@ -63,9 +63,6 @@ jobs:
           CIBW_BUILD_VERBOSITY: 3
         continue-on-error: true # Let it complete even if there's an error
 
-      - name: Check linked libraries
-        run: |
-          find . -name "*.so" -o -name "*.dylib" | xargs ldd 2>/dev/null || echo "No dynamic libs found"
 
       - name: Upload logs on failure
         if: failure()
