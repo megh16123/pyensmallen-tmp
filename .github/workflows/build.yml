@@ -28,14 +28,13 @@ jobs:
         uses: mamba-org/setup-micromamba@v2.0.1
         with:
           environment-name: pyensmallen
-          create-args: armadillo ensmallen
+          create-args: armadillo ensmallen libopenblas-dev
           init-shell: bash
           generate-run-shell: true
 
       - name: Install openblas
         run: |
           sudo apt-get install libopenblas-dev
-          sudo ln -s /usr/lib/x86_64-linux-gnu/libopenblas.so.0 /usr/lib/x86_64-linux-gnu/libmkl_rt.so.2
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.19.0

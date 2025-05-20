@@ -34,7 +34,7 @@ ext_modules = [
             get_pybind_include(),
             get_pybind_include(user=True),
         ],
-        libraries=["armadillo", "lapack", "blas"],  # Add LAPACK and BLAS
+        libraries=["armadillo", "openblas"],  # Add LAPACK and BLAS
         library_dirs=["/usr/lib/x86_64-linux-gnu/"],  # Add LAPACK and BLAS
         language="c++",
     ),
