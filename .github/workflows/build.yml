@@ -28,7 +28,7 @@ jobs:
         uses: mamba-org/setup-micromamba@v2.0.1
         with:
           environment-name: pyensmallen
-          create-args: armadillo ensmallen numpy nomkl
+          create-args: cmake openblas armadillo ensmallen numpy nomkl
           init-shell: bash
           generate-run-shell: true
 
@@ -36,9 +36,11 @@ jobs:
         uses: pypa/cibuildwheel@v2.19.0
         env:
           CIBW_BEFORE_BUILD: |
-            export PKG_CONFIG_PATH="/Users/runner/micromamba/envs/pyensmallen/lib/pkgconfig:$PKG_CONFIG_PATH"
-            export CMAKE_PREFIX_PATH="/Users/runner/micromamba/envs/pyensmallen"
-            ls -la /Users/runner/micromamba/envs/pyensmallen/lib/pkgconfig || echo "pkgconfig dir not found"
+            export PKG_CONFIG_PATH="/home/runner/micromamba/envs/pyensmallen/lib/pkgconfig:$PKG_CONFIG_PATH"
+            export CMAKE_PREFIX_PATH="/home/runner/micromamba/envs/pyensmallen"
+            export OPENBLAS=/home/runner/micromamba/envs/pyensmallen/lib/libopenblas.so
+            export BLAS=$OPENBLAS
+            export LAPACK=$OPENBLAS
             python -m pip install -v build
             python -c "import os; print('Environment:', os.environ)"
           CIBW_ENVIRONMENT_LINUX: >-
