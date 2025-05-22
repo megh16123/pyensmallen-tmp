@@ -31,7 +31,7 @@ jobs:
           create-args: armadillo ensmallen
           init-shell: bash
           generate-run-shell: true
-
+      
       - name: Install OpenBLAS and Armadillo
         run: |
           sudo apt-get update
@@ -45,15 +45,19 @@ jobs:
             exit 1
           fi
 
-          # Set OpenBLAS as the default BLAS/LAPACK
-          sudo update-alternatives --install /usr/lib/x86_64-linux-gnu/libblas.so.3 libblas.so.3 \
-            /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 50
-          sudo update-alternatives --set libblas.so.3 /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
+          # Check if libblas.so.3 is already managed
+          if sudo update-alternatives --query libblas.so.3 > /dev/null 2>&1; then
+            echo "libblas.so.3 is already managed. Skipping update-alternatives installation."
+          else
+            # Set OpenBLAS as the default BLAS/LAPACK
+            sudo update-alternatives --install /usr/lib/x86_64-linux-gnu/libblas.so.3 libblas.so.3 \
+              /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 50
+            sudo update-alternatives --set libblas.so.3 /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
 
-          sudo update-alternatives --install /usr/lib/x86_64-linux-gnu/liblapack.so.3 liblapack.so.3 \
-            /usr/lib/x86_64-linux-gnu/openblas-pthread/liblapack.so.3 50
-          sudo update-alternatives --set liblapack.so.3 /usr/lib/x86_64-linux-gnu/openblas-pthread/liblapack.so.3
-
+            sudo update-alternatives --install /usr/lib/x86_64-linux-gnu/liblapack.so.3 liblapack.so.3 \
+              /usr/lib/x86_64-linux-gnu/openblas-pthread/liblapack.so.3 50
+            sudo update-alternatives --set liblapack.so.3 /usr/lib/x86_64-linux-gnu/openblas-pthread/liblapack.so.3
+          fi
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.19.0
         env:
